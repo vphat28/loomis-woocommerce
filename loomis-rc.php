@@ -2,7 +2,7 @@
 /*
 Plugin Name: Loomis Rate Calculator
 Description: Rate shipments via the Loomis rate calculator
-Version:	 1.0.2
+Version:	 1.0.3
 Author:	  Loomis Express
 Author URI:  http://www.loomis-express.com
 License:	 GPL2
@@ -45,7 +45,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 					$this->method_title	   	= __( 'Loomis Rate Calculator' );  // Title shown in admin
 					$this->method_description 	= __( 'Calculate shipping rates using the Loomis rate calculator' ); // Description shown in admin
 					$this->title			  		= "Loomis";
-					$this->version					= "1.0.2";
+					$this->version					= "1.0.3";
 					
 					$this->init();
 				}
@@ -297,7 +297,9 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 				* calculate_shipping function.
 				*
 				* @access public
+				*
 				* @param mixed $package
+				*
 				* @return void
 				*/
 				public function calculate_shipping( $package = array() ) {
@@ -394,7 +396,6 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                         }
 
                         $available_services = $available_services->return->getAvailableServicesResult;
-                        $available_services = set_transient(md5('loomisrcservices' . json_encode($request)), $available_services, WEEK_IN_SECONDS);
 					}
 					
 					if (is_null($available_services))
@@ -836,7 +837,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 					}
 					
 					// Make the log directory if it doesn't exist
-					$dir = realpath(dirname(__FILE__)) . "/logs";
+					$dir = realpath(dirname(__FILE__, 3)) . "/uploads/loomis-logs";
 					
 					if ( !file_exists($dir) ) {
 						mkdir($dir, 0744);
