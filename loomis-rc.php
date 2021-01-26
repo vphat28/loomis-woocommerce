@@ -2,7 +2,7 @@
 /*
 Plugin Name: Loomis Rate Calculator
 Description: Rate shipments via the Loomis rate calculator
-Version:	 1.0.3
+Version:	 1.0.4
 Author:	  Loomis Express
 Author URI:  http://www.loomis-express.com
 License:	 GPL2
@@ -45,7 +45,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 					$this->method_title	   	= __( 'Loomis Rate Calculator' );  // Title shown in admin
 					$this->method_description 	= __( 'Calculate shipping rates using the Loomis rate calculator' ); // Description shown in admin
 					$this->title			  		= "Loomis";
-					$this->version					= "1.0.3";
+					$this->version					= "1.0.4";
 					
 					$this->init();
 				}
@@ -307,7 +307,12 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 					if ($this->settings['enabled'] == "no") {
 						return;
 					}
-					
+
+					// Exit when add_to_cart action invoked, to reduce request times
+					if (isset($_REQUEST['wc-ajax']) && $_REQUEST['wc-ajax'] === 'add_to_cart') {
+					  return;
+					}
+
 					// Prep logging
 					$load_time_start = microtime(true);
 					$soap_log_name = date('His') . "-RatingSOAP";
@@ -713,7 +718,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 						$log_output[] = "Product {$i}: {$product->get_title()} (Product ID: {$product_data['product_id']})";
 						$log_output[] = ((float) $product->get_weight() == 0) ? "Weight: {$weight} (defaulted from 0)" : "Weight: {$weight}";
 						$log_output[] = "Dims: {$length} x {$width} x {$height}";
-						$log_output[] = "Extra Care (XC): {$rate->packages[0]->xc}";
+						//$log_output[] = "Extra Care (XC): {$rate->packages[0]->xc}";
 						$log_output[] = "Price (subtotal): " . $product_data['line_subtotal'];
 						$log_output[] = "Calculated weight: {$billed_weight} {$units['wgt']}";
 						$log_output[] = "Quantity: {$quantity}";
@@ -765,24 +770,19 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 					if ($total_xc_weight > 0) {
 						$xc_pieces = ceil($total_pieces * $xc_ratio); // use that weight ratio to determine how many pieces are XC (rounded)
 					}
-					
-					
-					$this->loomis_log($gen_pcs_log, "Max weight: {$this->settings['maximum_weight']}\nTotal weight: {$total_weight}\nPieces: {$total_pieces}\nXC pieces: {$xc_pieces}", "append");
                
 					// Generate the pieces
 					$packages = array();
 					for ($i=0; $i<$total_pieces; $i++) {
 						$packages[$i] = array(
 							'package_info_num' => array(
-								array('name' => 'HEIGHT', 'value' => 0),
-								array('name' => 'WIDTH', 'value' => 0),
-								array('name' => 'LENGTH', 'value' => 0)
+
 							),
 							'reported_weight' => round(($total_weight / $total_pieces), 1)
 						);
 						
 						// Add the XC piece if required
-						if ($i < $xc_pieces) {
+						if (isset($xc_pieces) && $i < $xc_pieces) {
 							$packages[$i]['package_info_str'] = array(
 								array('name' => 'NON_STANDARD', 'value' => true)
 							);
@@ -817,7 +817,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
 					$error = explode("|", $error); // Split English and French. Only En will return
 
-					return $error[1];
+					return isset($error[1]) ? $error[1] : '';
 				}
 
 				/**
